@@ -14,10 +14,11 @@ MainWindow::MainWindow (QWidget *parent) :
 {
   ui->setupUi (this);
 
-  ui->fileContentsTreeView->setRootIsDecorated (false);
-  ui->fileContentsTreeView->setItemsExpandable (false);
-  ui->fileContentsTreeView->setUniformRowHeights (true);
-  ui->fileContentsTreeView->header ()->hide ();
+  ui->fileContentsTableView->horizontalHeader ()->setStretchLastSection (true);
+  ui->fileContentsTableView->horizontalHeader ()->hide ();
+  ui->fileContentsTableView->verticalHeader ()->setDefaultSectionSize (fontMetrics ().height ());
+  ui->fileContentsTableView->verticalHeader ()->hide ();
+  ui->fileContentsTableView->setShowGrid (false);
 
   connect (ui->openAction, SIGNAL (triggered ()), this, SLOT (open_file ()));
   connect (ui->exitAction, SIGNAL (triggered ()), this, SLOT (close ()));
@@ -47,5 +48,5 @@ void MainWindow::open_file ()
     }
 
   file_qmodel.swap (new_file_qmodel);
-  ui->fileContentsTreeView->setModel (file_qmodel.data ());
+  ui->fileContentsTableView->setModel (file_qmodel.data ());
 }

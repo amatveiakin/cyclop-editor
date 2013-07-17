@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QTreeView" name="fileContentsTreeView"/>
+     <widget class="QTableView" name="fileContentsTableView"/>
     </item>
    </layout>
   </widget>
