@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QProgressBar>
 
 #include "mainwindow.h"
 #include "huge_file_qmodel.h"
@@ -33,6 +34,12 @@ void MainWindow::open_file ()
     return;
 
   QScopedPointer<huge_file_qmodel> new_file_qmodel (new huge_file_qmodel ());
+
+  QProgressBar file_open_progress_bar;
+  ui->statusBar->addWidget (&file_open_progress_bar);
+  file_open_progress_bar.setRange (0, 100);
+  connect (new_file_qmodel.data (), SIGNAL (set_open_precent (int)), &file_open_progress_bar, SLOT (setValue (int)));
+
   if (!new_file_qmodel->open_file (new_file_name))
     {
       QMessageBox::warning (this, "Error", "Unable to open file", QMessageBox::Ok);

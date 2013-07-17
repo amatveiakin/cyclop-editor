@@ -19,12 +19,15 @@ bool huge_file_qmodel::open_file (QString file_name)
     return false;
 
   file.swap (new_file);
+  double progress_denominator = 100. / file->size ();
 
   // TODO: optimize
   while (true)
     {
       // warning: may not be equal to the sum of line lengths because of line ends converting
-      lines_start_positions.push_back (file->pos ());
+      qint64 file_pos = file->pos ();
+      lines_start_positions.push_back (file_pos);
+      emit set_open_precent ((int)(file_pos * progress_denominator));
       if (file->readLine ().isEmpty ())
         break;
     }
