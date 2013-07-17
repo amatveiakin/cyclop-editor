@@ -3,8 +3,14 @@
 #include "huge_file_qmodel.h"
 
 
+static const int default_line_markers_gap = 200;
+static const int rows_seen_at_once_expected_count = 80;
+
+
 huge_file_qmodel::huge_file_qmodel (QObject *parent)
   : QAbstractListModel (parent)
+  , n_lines (0)
+  , lines_cache ((default_line_markers_gap + rows_seen_at_once_expected_count) * 2)
 {
 }
 
@@ -22,33 +28,49 @@ bool huge_file_qmodel::open_file (QString file_name)
   double progress_denominator = 100. / file->size ();
 
   // TODO: optimize
-  while (true)
+  n_lines = 0;
+  do
     {
       // warning: may not be equal to the sum of line lengths because of line ends converting
       qint64 file_pos = file->pos ();
-      lines_start_positions.push_back (file_pos);
+      if (n_lines % default_line_markers_gap == 0)
+        lines_start_positions[n_lines] = file_pos;
       emit set_open_precent ((int)(file_pos * progress_denominator));
-      if (file->readLine ().isEmpty ())
-        break;
+      ++n_lines;
     }
+  while (!file->readLine ().isEmpty ());
+  --n_lines;
   return true;
 }
 
 int huge_file_qmodel::rowCount (const QModelIndex &/*parent*/) const
 {
-  if (!file)
-    return 0;
-  return lines_start_positions.size ();
+  return n_lines;
 }
 
 QVariant huge_file_qmodel::data (const QModelIndex &index, int role) const
 {
-  if (role == Qt::DisplayRole && index.row () < lines_start_positions.size ())
+  int requested_line = index.row ();
+  if (role == Qt::DisplayRole && requested_line < n_lines)
     {
-      file->seek (lines_start_positions[index.row ()]);
-      QByteArray line = file->readLine ();
-      line.chop (1);
-      return line;
+      if (!lines_cache.contains (requested_line))
+        {
+          auto lines_end_it = lines_start_positions.upperBound (requested_line);
+          auto lines_begin_it = lines_end_it - 1;
+          int lines_begin = lines_begin_it.key ();
+          int lines_end = (lines_end_it == lines_start_positions.end ()) ? n_lines : lines_end_it.key ();
+          qDebug ("seeking to %lld, reading lines %d..%d", lines_begin_it.value (), lines_begin, lines_end);
+          file->seek (lines_begin_it.value ());
+          for (int file_line = lines_begin; file_line < lines_end; ++file_line)
+            {
+              QByteArray line_data = file->readLine ();
+              Q_ASSERT (!line_data.isEmpty ());
+              if (line_data.endsWith ('\n'))
+                line_data.chop (1);
+              lines_cache.insert (file_line, new QString (line_data));
+            }
+        }
+      return *lines_cache[requested_line];
     }
   return QVariant ();
 }

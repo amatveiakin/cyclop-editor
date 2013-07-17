@@ -2,6 +2,7 @@
 #define HUGE_FILE_QMODEL_H
 
 #include <QAbstractListModel>
+#include <QCache>
 #include <QVector>
 
 class QFile;
@@ -24,7 +25,9 @@ signals:
 
 private:
   QScopedPointer<QFile> file;
-  QVector<qint64> lines_start_positions;
+  int n_lines;
+  QMap<int, qint64> lines_start_positions;
+  mutable QCache<int, QString> lines_cache;
 };
 
 #endif // HUGE_FILE_QMODEL_H
