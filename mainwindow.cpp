@@ -1,4 +1,5 @@
 #include <QFileDialog>
+#include <QLabel>
 #include <QMessageBox>
 #include <QProgressBar>
 
@@ -23,6 +24,9 @@ MainWindow::MainWindow (QWidget *parent) :
   ui->fileContentsTableView->verticalHeader ()->hide ();
   ui->fileContentsTableView->setShowGrid (false);
   ui->fileContentsTableView->setEditTriggers (QAbstractItemView::AllEditTriggers);
+
+  current_line_label = new QLabel (this);
+  ui->statusBar->addPermanentWidget (current_line_label);
 
   setWindowTitle (app_name);
 
@@ -58,6 +62,8 @@ void MainWindow::open_file ()
   ui->statusBar->showMessage ("Opened successfully");
   setWindowTitle (QString ("%1 - %2").arg (new_file_name, app_name));
   ui->fileContentsTableView->setModel (file_qmodel.data ());
+
+  connect (ui->fileContentsTableView->selectionModel (), SIGNAL (currentChanged (QModelIndex, QModelIndex)), this, SLOT (show_current_line (QModelIndex)));
 }
 
 void MainWindow::save_file ()
@@ -81,4 +87,11 @@ void MainWindow::save_file ()
     }
 
   ui->statusBar->showMessage ("Saved successfully");
+}
+
+void MainWindow::show_current_line (const QModelIndex &current_index)
+{
+  QString i_line  = QString::number (current_index.row () + 1);
+  QString n_lines = QString::number (file_qmodel->rowCount ());
+  current_line_label->setText (QString ("Line %1 of %2").arg (i_line, n_lines));
 }
